@@ -80,6 +80,7 @@ export const Repository = styled.div`
 
     div {
         margin-left: 16px;
+        flex: 1;
 
         strong {
             font-size: 20px;
