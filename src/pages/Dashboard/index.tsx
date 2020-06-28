@@ -5,7 +5,7 @@ import { AxiosResponse } from 'axios';
 import logo from '../../assets/logo.svg';
 import api from '../../service/api';
 
-import { Container, Titutlo, Form, Repository } from './styles';
+import { Container, Titutlo, Form, Repository, Error } from './styles';
 
 interface Repository {
     full_name: string;
@@ -19,23 +19,32 @@ interface Repository {
 const Dashboard: React.FC = () => {
     const [newRepo, setNewRepo] = useState('');
     const [repositorios, setRepositorios] = useState<Repository[]>([]);
+    const [inputError, setInputError] = useState('');
 
     async function handleAddRepository(
         event: FormEvent<HTMLFormElement>,
     ): Promise<void> {
         event.preventDefault();
+        if (!newRepo) {
+            return setInputError('Digite o autor/nome do repositório');
+        }
 
-        const response = await api.get<Repository>(`/repos/${newRepo}`);
+        try {
+            const response = await api.get<Repository>(`/repos/${newRepo}`);
 
-        setRepositorios([...repositorios, response.data]);
-        setNewRepo('');
+            setRepositorios([...repositorios, response.data]);
+            setNewRepo('');
+            setInputError('');
+        } catch (err) {
+            setInputError('Erro na busca por este repositório');
+        }
     }
 
     return (
         <>
             <img src={logo} alt="logo" />
             <Titutlo>Explore repositórios do github!</Titutlo>
-            <Form onSubmit={handleAddRepository}>
+            <Form hasError={!!inputError} onSubmit={handleAddRepository}>
                 <input
                     placeholder="Digite o nome do repo!"
                     type="text"
@@ -46,7 +55,7 @@ const Dashboard: React.FC = () => {
                 />
                 <button type="submit">Pesquisar</button>
             </Form>
-
+            {inputError && <Error>{inputError}</Error>}
             <Repository>
                 {repositorios.map((repositorio) => (
                     <a href="tes" key={repositorio.full_name}>
