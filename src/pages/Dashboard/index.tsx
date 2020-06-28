@@ -1,7 +1,6 @@
 /* eslint-disable camelcase */
 import React, { useEffect, useState, FormEvent } from 'react';
 import { FiChevronRight } from 'react-icons/fi';
-import { AxiosResponse } from 'axios';
 import logo from '../../assets/logo.svg';
 import api from '../../service/api';
 
@@ -18,15 +17,32 @@ interface Repository {
 
 const Dashboard: React.FC = () => {
     const [newRepo, setNewRepo] = useState('');
-    const [repositorios, setRepositorios] = useState<Repository[]>([]);
+    const [repositorios, setRepositorios] = useState<Repository[]>(() => {
+        const storageItens = localStorage.getItem(
+            '@githubExplore:repositories',
+        );
+
+        if (storageItens) {
+            return JSON.parse(storageItens);
+        }
+    });
     const [inputError, setInputError] = useState('');
+
+    useEffect(() => {
+        localStorage.setItem(
+            '@githubExplore:repositories',
+            JSON.stringify(repositorios),
+        );
+    }, [repositorios]);
 
     async function handleAddRepository(
         event: FormEvent<HTMLFormElement>,
     ): Promise<void> {
         event.preventDefault();
+
         if (!newRepo) {
-            return setInputError('Digite o autor/nome do repositório');
+            setInputError('Digite o autor/nome do repositório');
+            return;
         }
 
         try {
