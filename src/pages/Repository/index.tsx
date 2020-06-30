@@ -1,22 +1,58 @@
+/* eslint-disable camelcase */
+/* eslint-disable no-use-before-define */
 import React, { useEffect, useState } from 'react';
 import { useRouteMatch, Link } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import logo from '../../assets/logo.svg';
 
 import { Container, Headers, RepositoryInfo, Issues } from './styles';
+import api from '../../service/api';
 
 interface RepositoryParams {
-    repository: string;
+    full_name: string;
+}
+
+interface Repository {
+    full_name: string;
+    description: string;
+    stargazers_count: number;
+    forks_count: number;
+    open_issues_count: number;
+    owner: {
+        login: string;
+        avatar_url: string;
+    };
+}
+
+interface Issue {
+    title: string;
+    id: number;
+    html_url: string;
+    user: {
+        login: string;
+    };
 }
 
 const Repository: React.FC = () => {
-    const { params } = useRouteMatch();
-    const [repositorio, setRepositorio] = useState<RepositoryParams>();
+    const { params } = useRouteMatch<RepositoryParams>();
+    const [repositorio, setRepositorio] = useState<Repository | null>(null);
+    const [issuesRepo, setIssues] = useState<Issue[]>([]);
+
+    console.log(params);
 
     useEffect(() => {
-        console.log('sadf');
-    }, []);
+        LoadDataForRepository();
+    }, [params.full_name]);
 
+    async function LoadDataForRepository(): Promise<void> {
+        const [repository, issues] = await Promise.all([
+            api.get<Repository>(`repos/${params.full_name}`),
+            api.get<Issue[]>(`repos/${params.full_name}/issues`),
+        ]);
+
+        setRepositorio(repository.data);
+        setIssues(issues.data);
+    }
     return (
         <>
             <Headers>
@@ -26,43 +62,46 @@ const Repository: React.FC = () => {
                     Voltar
                 </Link>
             </Headers>
+            {repositorio && (
+                <RepositoryInfo>
+                    <header>
+                        <img
+                            src={repositorio.owner.avatar_url}
+                            alt={repositorio.owner.login}
+                        />
+                        <div>
+                            <strong>{repositorio.full_name}</strong>
+                            <p>{repositorio.description}</p>
+                        </div>
+                    </header>
+                    <ul>
+                        <li>
+                            <strong>{repositorio.stargazers_count}</strong>
+                            <span>strars</span>
+                        </li>
+                        <li>
+                            <strong>{repositorio.forks_count}</strong>
+                            <span>forks</span>
+                        </li>
+                        <li>
+                            <strong>{repositorio.open_issues_count}</strong>
+                            <span>issues abertas</span>
+                        </li>
+                    </ul>
+                </RepositoryInfo>
+            )}
+            {issuesRepo.map((issue) => (
+                <Issues key={issue.id}>
+                    <Link to={issue.html_url}>
+                        <div>
+                            <strong>{issue.title}</strong>
+                            <p>{issue.user.login}</p>
+                        </div>
 
-            <RepositoryInfo>
-                <header>
-                    <img
-                        src="https://avatars2.githubusercontent.com/u/42546922?s=460&u=7e7ee3bc668ac96dab3ed6f5653ff1940413cc7b&v=4"
-                        alt="profile-avatar"
-                    />
-                    <div>
-                        <strong>Delfio/backend_go_barber</strong>
-                        <p>descricao do repo</p>
-                    </div>
-                </header>
-                <ul>
-                    <li>
-                        <strong>1808</strong>
-                        <span>strars</span>
-                    </li>
-                    <li>
-                        <strong>48</strong>
-                        <span>forks</span>
-                    </li>
-                    <li>
-                        <strong>67</strong>
-                        <span>issues abertas</span>
-                    </li>
-                </ul>
-            </RepositoryInfo>
-            <Issues>
-                <Link to="/ss">
-                    <div>
-                        <strong>sdf</strong>
-                        <p>sdf</p>
-                    </div>
-
-                    <FiChevronRight size={20} color="#cbcbd6" />
-                </Link>
-            </Issues>
+                        <FiChevronRight size={20} color="#cbcbd6" />
+                    </Link>
+                </Issues>
+            ))}
         </>
     );
 };
